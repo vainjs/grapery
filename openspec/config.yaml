@@ -1,0 +1,21 @@
+schema: spec-driven
+
+context: |
+  Grapery 用于探索 Vue 3、Nuxt 5 nightly 与原生 GrapesJS 的工程化集成。
+  包管理器使用 pnpm，所有终端命令必须通过 rtk 执行。
+  前端组件使用 Vue Composition API 和 TypeScript；浏览器专用 SDK 必须隔离在客户端生命周期。
+  服务端使用 Nuxt/Nitro API。MVP 只支持 `/editor` 中的单个固定网站项目。
+  完成前运行类型检查和生产构建。
+
+rules:
+  proposal:
+    - 使用中文编写
+    - 明确列出非目标
+  design:
+    - 使用中文编写
+    - 说明客户端生命周期、数据流和失败处理
+  specs:
+    - 使用中文编写，规范关键字保留 MUST/SHALL
+  tasks:
+    - 使用中文编写
+    - 按依赖顺序拆分任务
