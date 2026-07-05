@@ -1,0 +1,286 @@
+@import 'grapesjs/dist/css/grapes.min.css';
+
+.gjs-editor {
+  --gjs-left-width: 0%;
+  --gjs-canvas-top: 0px;
+}
+
+.gjs-one-bg {
+  background: transparent;
+}
+
+.gjs-three-bg {
+  background: #eee;
+}
+
+// 样式模块样式定制
+.gjs-sm-sectors {
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-size: 13px;
+
+  .gjs-sm-sector {
+    border-bottom: 1px solid var(--app-border);
+    background: transparent;
+
+    &.gjs-sm-open > .gjs-sm-sector-title {
+      background: var(--app-bg-selected);
+      color: var(--app-primary);
+    }
+
+    &-title {
+      min-height: 40px;
+      padding: 0 12px;
+      border: 0;
+      background: var(--app-bg-subtle);
+      color: var(--app-text-strong);
+      font-weight: 600;
+
+      &:hover {
+        background: color-mix(
+          in srgb,
+          var(--app-primary) 4%,
+          var(--app-bg-subtle)
+        );
+      }
+    }
+
+    &-caret {
+      color: currentColor;
+      opacity: 0.72;
+    }
+  }
+
+  .gjs-sm-properties {
+    padding: 12px;
+    background: color-mix(in srgb, var(--app-bg-subtle) 72%, var(--app-border));
+  }
+
+  .gjs-sm-property {
+    padding: 0 4px 12px;
+
+    &.gjs-sm-composite {
+      padding: 10px;
+      border: 1px solid var(--app-border-strong);
+      border-radius: var(--app-control-radius);
+      background: var(--app-bg);
+      box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+    }
+  }
+
+  .gjs-sm-label {
+    margin-bottom: 6px;
+    color: var(--app-text);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .gjs-field {
+    min-height: var(--app-control-height);
+    border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-control-radius);
+    background: var(--app-control-surface);
+    color: var(--app-text);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 70%),
+      0 1px 2px rgb(15 23 42 / 5%);
+
+    &:hover {
+      border-color: color-mix(
+        in srgb,
+        var(--app-primary) 34%,
+        var(--app-border-strong)
+      );
+    }
+
+    &:focus-within {
+      border-color: var(--app-primary);
+      box-shadow: 0 0 0 2px
+        color-mix(in srgb, var(--app-primary) 16%, transparent);
+    }
+
+    input,
+    select {
+      height: calc(var(--app-control-height) - 2px);
+      padding: 0 8px;
+      color: inherit;
+      font: inherit;
+    }
+  }
+
+  .gjs-radio {
+    &-items {
+      overflow: hidden;
+      border: 1px solid var(--app-border-strong);
+      border-radius: var(--app-control-radius);
+      background: var(--app-control-surface);
+      box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+    }
+
+    &-item {
+      border: 0;
+
+      &:not(:last-child) {
+        border-right: 1px solid var(--app-border-strong);
+      }
+
+      &-label {
+        display: flex;
+        min-height: calc(var(--app-control-height) - 2px);
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        background: transparent;
+        color: var(--app-text-muted);
+      }
+
+      input:checked + &-label {
+        background: var(--app-primary);
+        color: white;
+      }
+    }
+  }
+}
+
+.gjs-clm-tags {
+  padding: 0 12px 12px;
+  // margin: 0;
+  color: var(--app-text);
+  font-size: 12px;
+  font-weight: 500;
+
+  .gjs-field {
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-control-radius);
+    background: transparent;
+    color: var(--app-text);
+  }
+
+  .gjs-clm-header {
+    color: var(--app-text);
+  }
+
+  // #gjs-clm-checkbox,
+  // #gjs-clm-close {
+  //   color: var(--app-text);
+  // }
+
+  // .gjs-clm-sels {
+  //   min-height: 36px;
+  //   padding: 4px;
+  //   border: 1px solid var(--app-border-strong);
+  //   border-radius: var(--app-control-radius);
+  //   background: var(--app-control-surface);
+  //   box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+  // }
+
+  // .gjs-clm-tags-btn {
+  //   width: var(--app-control-height);
+  //   height: var(--app-control-height);
+  //   border: 1px solid var(--app-border-strong);
+  //   border-radius: var(--app-control-radius);
+  //   background: var(--app-control-surface);
+  //   color: var(--app-text-muted);
+
+  //   &:hover {
+  //     border-color: var(--app-primary);
+  //     color: var(--app-primary);
+  //   }
+  // }
+
+  // .gjs-clm-label-sel {
+  //   border-radius: var(--app-control-radius);
+  //   background: var(--app-primary);
+  //   color: white;
+  // }
+
+  // .gjs-clm-sels-info {
+  //   margin-top: 8px;
+  //   color: var(--app-text-muted);
+  // }
+}
+
+// 图层模块样式定制
+.gjs-layer {
+  color: var(--app-text);
+  font-size: 12px;
+
+  &.gjs-hovered &-item {
+    background-color: var(--app-bg-selected);
+  }
+
+  &-item {
+    min-height: 36px;
+    background: var(--app-bg-subtle);
+    border-color: var(--app-border);
+  }
+
+  &.gjs-selected > .gjs-layer-item {
+    background: var(--app-bg-selected);
+    color: var(--app-primary);
+  }
+
+  &-name {
+    font-weight: 500;
+  }
+
+  &-caret,
+  &-vis,
+  &-count,
+  &-move {
+    color: currentColor;
+  }
+}
+
+.gjs-traits-c {
+  padding: 12px;
+  background: color-mix(in srgb, var(--app-bg-subtle) 72%, var(--app-border));
+  color: var(--app-text);
+  font-size: 12px;
+
+  .gjs-trt-trait__wrp {
+    padding: 0 0 12px;
+    border: 0;
+  }
+
+  .gjs-trt-trait {
+    color: var(--app-text);
+
+    .gjs-label {
+      color: var(--app-text);
+      font-weight: 500;
+    }
+  }
+
+  .gjs-field {
+    min-height: var(--app-control-height);
+    border: 1px solid var(--app-border-strong);
+    border-radius: var(--app-control-radius);
+    background: var(--app-control-surface);
+    color: var(--app-text);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 70%),
+      0 1px 2px rgb(15 23 42 / 5%);
+
+    &:hover {
+      border-color: color-mix(
+        in srgb,
+        var(--app-primary) 34%,
+        var(--app-border-strong)
+      );
+    }
+
+    &:focus-within {
+      border-color: var(--app-primary);
+      box-shadow: 0 0 0 2px
+        color-mix(in srgb, var(--app-primary) 16%, transparent);
+    }
+
+    input,
+    select,
+    textarea {
+      color: inherit;
+      font: inherit;
+    }
+  }
+}

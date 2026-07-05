@@ -26,7 +26,7 @@ const router = useRouter()
   place-items: center;
   padding: 64px 24px;
   color: var(--app-text-strong);
-  background: var(--app-surface-subtle);
+  background: var(--app-bg-subtle);
 }
 
 .intro {

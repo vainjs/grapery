@@ -24,6 +24,7 @@
     ]
   },
   "dependencies": {
+    "@vicons/ionicons5": "^0.13.0",
     "grapesjs": "0.22.16",
     "h3": "2.0.1-rc.22",
     "naive-ui": "^2.42.0",

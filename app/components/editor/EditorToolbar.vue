@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ArrowRedoOutline, ArrowUndoOutline } from '@vicons/ionicons5'
+
 type SaveStatus = 'clean' | 'dirty' | 'saving' | 'error'
 
 defineProps<{
@@ -38,7 +40,9 @@ function selectDevice(value: string | number | null) {
       :value="activeDevice"
       :options="deviceOptions"
       aria-label="画布设备"
+      :bordered="false"
       :disabled="!editorReady"
+      size="small"
       @update:value="selectDevice"
     />
     <div :class="$style.actions">
@@ -51,23 +55,7 @@ function selectDevice(value: string | number | null) {
         @click="emit('undo')"
       >
         <template #icon>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            aria-hidden="true"
-          >
-            <path
-              d="M9 7 4 12l5 5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M5 12h8a6 6 0 0 1 6 6"
-              stroke-linecap="round"
-            />
-          </svg>
+          <NIcon :component="ArrowUndoOutline" />
         </template>
       </NButton>
       <NButton
@@ -79,23 +67,7 @@ function selectDevice(value: string | number | null) {
         @click="emit('redo')"
       >
         <template #icon>
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="1.8"
-            aria-hidden="true"
-          >
-            <path
-              d="m15 7 5 5-5 5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-            <path
-              d="M19 12h-8a6 6 0 0 0-6 6"
-              stroke-linecap="round"
-            />
-          </svg>
+          <NIcon :component="ArrowRedoOutline" />
         </template>
       </NButton>
       <span
@@ -106,6 +78,7 @@ function selectDevice(value: string | number | null) {
       </span>
       <NButton
         type="primary"
+        size="small"
         :loading="saveStatus === 'saving'"
         :disabled="!editorReady"
         @click="emit('save')"
@@ -119,12 +92,12 @@ function selectDevice(value: string | number | null) {
 <style module lang="less">
 .toolbar {
   display: flex;
-  height: 56px;
+  height: 42px;
   flex-shrink: 0;
   align-items: center;
   padding: 0 16px;
   border-bottom: 1px solid var(--app-border);
-  background: var(--app-surface);
+  background: var(--app-bg);
 }
 
 .spacer,
@@ -134,18 +107,13 @@ function selectDevice(value: string | number | null) {
 }
 
 .deviceSelect {
-  width: 120px;
+  width: 96px;
 }
 
 .actions {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-}
-
-.actions svg {
-  width: 18px;
-  height: 18px;
 }
 
 .saveStatus {

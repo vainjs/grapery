@@ -1,21 +1,32 @@
 <script setup lang="ts">
 import type { Editor, ProjectData } from 'grapesjs'
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
-import EditorRightPanel from './editor/EditorRightPanel.vue'
-import EditorLeftPanel from './editor/EditorLeftPanel.vue'
+import {
+  AddOutline,
+  CheckmarkOutline,
+  CloseOutline,
+  CreateOutline,
+  TrashOutline,
+} from '@vicons/ionicons5'
+import { NCollapseItem } from 'naive-ui'
+import { createEditorConfig } from '../config/grapes-editor'
 import EditorToolbar from './editor/EditorToolbar.vue'
 
 type SaveStatus = 'clean' | 'dirty' | 'saving' | 'error'
-interface StoredProjectResponse {
+type LeftPanelName = 'blocks' | 'pages'
+type RightPanelName = 'styles' | 'traits'
+
+type StoredProjectResponse = {
   project: ProjectData
   updatedAt: string | null
 }
 const editorRoot = ref<HTMLElement | null>(null)
-const leftPanel = ref<InstanceType<typeof EditorLeftPanel> | null>(null)
-const rightPanel = ref<InstanceType<typeof EditorRightPanel> | null>(null)
-const editor = ref<Editor | null>(null)
-const activeLeftPanel = ref<'blocks' | 'layers'>('blocks')
-const activeRightPanel = ref<'traits' | 'styles'>('traits')
+const blockPanel = useTemplateRef<HTMLElement>('blockPanel')
+const layerPanel = useTemplateRef<HTMLElement>('layerPanel')
+const traitPanel = useTemplateRef<HTMLElement>('traitPanel')
+const stylePanel = useTemplateRef<HTMLElement>('stylePanel')
+const editor = shallowRef<Editor | null>(null)
+const activeLeftPanel = ref<LeftPanelName>('pages')
+const activeRightPanel = ref<RightPanelName>('traits')
 const activeDevice = ref('Desktop')
 const saveStatus = ref<SaveStatus>('clean')
 const statusMessage = ref('正在加载项目…')
@@ -23,6 +34,25 @@ const loadError = ref('')
 const canUndo = ref(false)
 const canRedo = ref(false)
 let acceptingUpdates = false
+
+const {
+  pages,
+  activePageId,
+  pageName,
+  pageNameError,
+  pageToRename,
+  pageToDelete,
+  canDeletePage,
+  addPage,
+  selectPage,
+  startRenamePage,
+  cancelRenamePage,
+  submitPageName,
+  requestDeletePage,
+  cancelDeletePage,
+  confirmDeletePage,
+} = useGrapesPages(editor)
+useGrapesLayers(editor)
 
 const saveLabel = computed(
   () =>
@@ -48,20 +78,30 @@ async function initializeEditor() {
   await nextTick()
 
   const editorContainer = editorRoot.value
-  const blockPanel = leftPanel.value?.getBlockPanel()
-  const layerPanel = leftPanel.value?.getLayerPanel()
-  const traitPanel = rightPanel.value?.getTraitPanel()
-  const stylePanel = rightPanel.value?.getStylePanel()
+  const blockPanelElement = blockPanel.value
+  const layerPanelElement = layerPanel.value
+  const traitPanelElement = traitPanel.value
+  const stylePanelElement = stylePanel.value
 
   if (
     !editorContainer ||
-    !blockPanel ||
-    !layerPanel ||
-    !traitPanel ||
-    !stylePanel
+    !blockPanelElement ||
+    !layerPanelElement ||
+    !traitPanelElement ||
+    !stylePanelElement
   ) {
     loadError.value = '编辑器容器尚未准备好。'
+    statusMessage.value = ''
     return
+  }
+
+  for (const panel of [
+    blockPanelElement,
+    layerPanelElement,
+    traitPanelElement,
+    stylePanelElement,
+  ]) {
+    panel.replaceChildren()
   }
 
   try {
@@ -70,100 +110,19 @@ async function initializeEditor() {
       $fetch<StoredProjectResponse>('/api/projects/default'),
     ])
 
-    const instance = grapesjs.init({
-      container: editorContainer,
-      height: '100%',
-      width: 'auto',
-      projectData: stored.project,
-      storageManager: false,
-      panels: { defaults: [] },
-      blockManager: {
-        appendTo: blockPanel,
-        blocks: [
-          {
-            id: 'section',
-            label: '容器',
-            category: '基础',
-            content: {
-              tagName: 'section',
-              style: { padding: '48px 32px', 'min-height': '160px' },
-              components:
-                '<h2>新的内容区块</h2><p>从右侧面板调整内容与样式。</p>',
-            },
-          },
-          {
-            id: 'text',
-            label: '文本',
-            category: '基础',
-            content: '<p style="padding: 12px">双击编辑文本</p>',
-          },
-          {
-            id: 'button',
-            label: '按钮',
-            category: '基础',
-            content:
-              '<a href="#" style="display:inline-block;padding:12px 20px;border-radius:8px;background:#4f46e5;color:white;text-decoration:none">行动按钮</a>',
-          },
-          {
-            id: 'image',
-            label: '图片',
-            category: '基础',
-            activate: true,
-            content: { type: 'image' },
-          },
-        ],
-      },
-      layerManager: { appendTo: layerPanel },
-      traitManager: { appendTo: traitPanel },
-      selectorManager: { appendTo: stylePanel },
-      styleManager: {
-        appendTo: stylePanel,
-        sectors: [
-          {
-            name: '布局',
-            open: true,
-            buildProps: [
-              'display',
-              'position',
-              'width',
-              'height',
-              'margin',
-              'padding',
-            ],
-          },
-          {
-            name: '排版',
-            open: false,
-            buildProps: [
-              'font-family',
-              'font-size',
-              'font-weight',
-              'color',
-              'line-height',
-              'text-align',
-            ],
-          },
-          {
-            name: '装饰',
-            open: false,
-            buildProps: [
-              'background-color',
-              'border',
-              'border-radius',
-              'box-shadow',
-              'opacity',
-            ],
-          },
-        ],
-      },
-      deviceManager: {
-        devices: [
-          { id: 'desktop', name: 'Desktop', width: '' },
-          { id: 'tablet', name: 'Tablet', width: '768px', widthMedia: '992px' },
-          { id: 'mobile', name: 'Mobile', width: '375px', widthMedia: '480px' },
-        ],
-      },
-    })
+    const instance = grapesjs.init(
+      createEditorConfig({
+        projectData: stored.project,
+        targets: {
+          blockPanel: blockPanelElement,
+          editorContainer,
+          layerPanel: layerPanelElement,
+          stylePanel: stylePanelElement,
+          traitPanel: traitPanelElement,
+        },
+      })
+    )
+    stylePanelElement.prepend(instance.SelectorManager.render([]))
 
     editor.value = instance
     activeDevice.value = 'Desktop'
@@ -221,7 +180,19 @@ function selectDevice(device: string) {
   activeDevice.value = device
 }
 
-onMounted(initializeEditor)
+async function mountManagerPanels() {
+  activeLeftPanel.value = 'blocks'
+  activeRightPanel.value = 'styles'
+  await nextTick()
+
+  activeLeftPanel.value = 'pages'
+  activeRightPanel.value = 'traits'
+  await nextTick()
+
+  await initializeEditor()
+}
+
+onMounted(mountManagerPanels)
 onBeforeUnmount(() => {
   acceptingUpdates = false
   editor.value?.destroy()
@@ -231,10 +202,177 @@ onBeforeUnmount(() => {
 
 <template>
   <main :class="$style.workbench">
-    <EditorLeftPanel
-      ref="leftPanel"
-      v-model="activeLeftPanel"
-    />
+    <aside :class="$style.leftPanel">
+      <NTabs
+        v-model:value="activeLeftPanel"
+        justify-content="space-evenly"
+        type="line"
+        animated
+      >
+        <NTabPane
+          display-directive="show"
+          name="pages"
+          tab="页面"
+        >
+          <NCollapse
+            :default-expanded-names="['pages', 'layers']"
+            :trigger-areas="['main', 'arrow']"
+          >
+            <NCollapseItem
+              :class="$style.pageCollapse"
+              display-directive="show"
+              name="pages"
+              title="页面"
+            >
+              <template #header-extra>
+                <NButton
+                  aria-label="新增页面"
+                  title="新增页面"
+                  size="small"
+                  quaternary
+                  circle
+                  @click.prevent="addPage"
+                >
+                  <template #icon>
+                    <NIcon :component="AddOutline" />
+                  </template>
+                </NButton>
+              </template>
+              <div :class="$style.pageList">
+                <div
+                  v-for="page in pages"
+                  :key="page.id"
+                  :class="[
+                    $style.pageRow,
+                    page.id === activePageId && $style.pageRowActive,
+                  ]"
+                  role="button"
+                  tabindex="0"
+                  @click="selectPage(page.id)"
+                  @keydown.enter="selectPage(page.id)"
+                  @keydown.space.prevent="selectPage(page.id)"
+                >
+                  <NInput
+                    v-if="page.id === pageToRename"
+                    v-model:value="pageName"
+                    :class="$style.pageNameInput"
+                    autofocus
+                    size="tiny"
+                    :placeholder="pageNameError || '页面名称'"
+                    :status="pageNameError ? 'error' : undefined"
+                    @click.stop
+                    @keydown.enter.stop="submitPageName"
+                    @keydown.esc.stop="cancelRenamePage"
+                  />
+                  <span
+                    v-else
+                    :class="$style.pageName"
+                  >
+                    {{ page.getName() }}
+                  </span>
+                  <span
+                    v-if="page.id === pageToRename"
+                    :class="$style.pageActions"
+                  >
+                    <NButton
+                      aria-label="确认重命名"
+                      title="确认"
+                      size="tiny"
+                      quaternary
+                      circle
+                      @click.stop="submitPageName"
+                    >
+                      <template #icon>
+                        <NIcon :component="CheckmarkOutline" />
+                      </template>
+                    </NButton>
+                    <NButton
+                      aria-label="取消重命名"
+                      title="取消"
+                      size="tiny"
+                      quaternary
+                      circle
+                      @click.stop="cancelRenamePage"
+                    >
+                      <template #icon>
+                        <NIcon :component="CloseOutline" />
+                      </template>
+                    </NButton>
+                  </span>
+                  <span
+                    v-else-if="page.id === pageToDelete"
+                    :class="$style.inlineConfirm"
+                    @click.stop
+                  >
+                    <NButton
+                      size="tiny"
+                      type="error"
+                      secondary
+                      @click="confirmDeletePage"
+                    >
+                      删除
+                    </NButton>
+                    <NButton
+                      size="tiny"
+                      quaternary
+                      @click="cancelDeletePage"
+                    >
+                      取消
+                    </NButton>
+                  </span>
+                  <span
+                    v-else
+                    :class="$style.pageActions"
+                  >
+                    <NButton
+                      aria-label="重命名页面"
+                      title="重命名"
+                      size="tiny"
+                      quaternary
+                      circle
+                      @click.stop="startRenamePage(page.id)"
+                    >
+                      <template #icon>
+                        <NIcon :component="CreateOutline" />
+                      </template>
+                    </NButton>
+                    <NButton
+                      aria-label="删除页面"
+                      title="删除"
+                      size="tiny"
+                      quaternary
+                      circle
+                      :disabled="!canDeletePage"
+                      @click.stop="requestDeletePage(page.id)"
+                    >
+                      <template #icon>
+                        <NIcon :component="TrashOutline" />
+                      </template>
+                    </NButton>
+                  </span>
+                </div>
+              </div>
+            </NCollapseItem>
+            <NCollapseItem
+              :class="$style.pageCollapse"
+              display-directive="show"
+              name="layers"
+              title="图层"
+            >
+              <div ref="layerPanel" />
+            </NCollapseItem>
+          </NCollapse>
+        </NTabPane>
+        <NTabPane
+          :style="{ paddingTop: 0 }"
+          display-directive="show"
+          name="blocks"
+          tab="组件"
+        >
+          <div ref="blockPanel" />
+        </NTabPane>
+      </NTabs>
+    </aside>
     <section :class="$style.center">
       <EditorToolbar
         :editor-ready="Boolean(editor)"
@@ -248,8 +386,7 @@ onBeforeUnmount(() => {
         @redo="redo"
         @undo="undo"
       />
-
-      <div :class="$style.canvasArea">
+      <main :class="$style.canvas">
         <div
           ref="editorRoot"
           :class="$style.editorRoot"
@@ -257,17 +394,45 @@ onBeforeUnmount(() => {
         <section
           v-if="!editor"
           :class="$style.loading"
-          aria-live="polite"
         >
-          <NSpin size="medium" />
-          <p>{{ statusMessage }}</p>
+          <NSpin
+            v-if="!loadError"
+            size="medium"
+          />
+          <p>{{ loadError || statusMessage }}</p>
+          <NButton
+            v-if="loadError"
+            type="primary"
+            @click="initializeEditor"
+          >
+            重试
+          </NButton>
         </section>
-      </div>
+      </main>
     </section>
-    <EditorRightPanel
-      ref="rightPanel"
-      v-model="activeRightPanel"
-    />
+    <aside :class="$style.rightPanel">
+      <NTabs
+        v-model:value="activeRightPanel"
+        justify-content="space-evenly"
+        type="line"
+        animated
+      >
+        <NTabPane
+          display-directive="show"
+          name="traits"
+          tab="属性"
+        >
+          <div ref="traitPanel" />
+        </NTabPane>
+        <NTabPane
+          display-directive="show"
+          name="styles"
+          tab="样式"
+        >
+          <div ref="stylePanel" />
+        </NTabPane>
+      </NTabs>
+    </aside>
   </main>
 </template>
 
@@ -276,47 +441,124 @@ onBeforeUnmount(() => {
   display: flex;
   width: 100%;
   height: 100%;
-  color: var(--app-text);
-  background: var(--app-canvas);
-}
 
-.center {
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
-}
+  .leftPanel {
+    display: flex;
+    width: 300px;
+    flex-shrink: 0;
+    flex-direction: column;
+    border-right: 1px solid var(--app-border);
 
-.canvasArea {
-  position: relative;
-  flex: 1;
-  background: var(--app-canvas);
-}
+    .pageList {
+      max-height: 220px;
+      overflow: auto;
+    }
 
-.editorRoot {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: var(--app-surface);
-}
+    .pageCollapse {
+      :global(.n-collapse-item__content-inner) {
+        padding-top: 10px;
+      }
+    }
 
-.loading {
-  position: absolute;
-  inset: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px;
-  border: 1px solid var(--app-border-strong);
-  border-radius: 12px;
-  background: rgb(248 250 252 / 95%);
-  text-align: center;
+    .pageRow {
+      display: flex;
+      width: 100%;
+      height: 40px;
+      align-items: center;
+      padding: 0 10px 0 16px;
+      border: 0;
+      background: transparent;
+      color: var(--app-text);
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
 
-  p {
-    margin: 12px 0 0;
-    color: var(--app-text-muted);
+      &:hover {
+        background: color-mix(in srgb, var(--app-primary) 14%, transparent);
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--app-primary);
+        outline-offset: -2px;
+      }
+
+      &Active {
+        background: var(--app-bg-selected);
+        color: var(--app-primary);
+      }
+    }
+
+    .pageName {
+      min-width: 0;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+
+      &Input {
+        min-width: 0;
+        flex: 1;
+        margin-right: 4px;
+      }
+    }
+
+    .pageActions,
+    .inlineConfirm {
+      display: flex;
+      flex-shrink: 0;
+    }
+
+    .pageActions {
+      gap: 2px;
+    }
+
+    .inlineConfirm {
+      gap: 4px;
+    }
+  }
+
+  .center {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+
+    .canvas {
+      position: relative;
+      height: 0;
+      flex: 1;
+
+      .editorRoot {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+
+      .loading {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        padding: 32px;
+        text-align: center;
+        transform: translate(-50%, -50%);
+
+        p {
+          margin: 12px 0 0;
+          color: var(--app-text-muted);
+        }
+
+        button {
+          margin-top: 16px;
+        }
+      }
+    }
+  }
+
+  .rightPanel {
+    display: flex;
+    width: 300px;
+    flex-shrink: 0;
+    flex-direction: column;
+    border-left: 1px solid var(--app-border);
   }
 }
 </style>

@@ -3,6 +3,9 @@ const themeOverrides = {
   common: {
     primaryColor: '#4F46E5',
   },
+  Tabs: {
+    tabBorderColor: 'var(--app-border)',
+  },
 }
 </script>
 
